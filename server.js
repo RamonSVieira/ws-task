@@ -1,48 +1,54 @@
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 }); // O servidor WebSocket irá escutar na porta 8080
+const wss = new WebSocket.Server({ port: 8080 });
 
-// Mock de dados de tarefas
 const mockTasks = [
   {
     tarefaId: 1,
-    state: 'PENDING',
-    status: 'Iniciado',
-    progress: 10,
-    nome_arquivo: 'Arquivo 1',
+    state: "PENDING",
+    status: "Identificando registros",
+    progress: 0,
+    nome_arquivo: "Arquivo 1",
   },
   {
     tarefaId: 2,
-    state: 'PROGRESS',
-    status: 'Processando',
-    progress: 50,
-    nome_arquivo: 'Arquivo 2',
+    state: "PENDING",
+    status: "Identificando registros",
+    progress: 0,
+    nome_arquivo: "Arquivo 2",
   },
   {
     tarefaId: 3,
-    state: 'SUCCESS',
-    status: 'Concluído',
-    progress: 100,
-    nome_arquivo: 'Arquivo 3',
+    state: "PENDING",
+    status: "Identificando registros",
+    progress: 0,
+    nome_arquivo: "Arquivo 3",
   },
 ];
 
-// Simula atualizações de tarefas
 const updateTaskProgress = () => {
-  const taskIndex = Math.floor(Math.random() * mockTasks.length);
-  const updatedTask = mockTasks[taskIndex];
-  
-  // Atualiza o progresso das tarefas
-  updatedTask.progress = updatedTask.progress + 10 > 100 ? 100 : updatedTask.progress + 10;
+  const pendingTasks = mockTasks.filter((t) => t.progress < 100);
 
-  const message = JSON.stringify({
-    type: 'ATUALIZACAO_TAREFA',
+  if (!pendingTasks.length) return null;
+
+  const taskIndex = Math.floor(Math.random() * pendingTasks.length);
+  const updatedTask = pendingTasks[taskIndex];
+
+  updatedTask.progress = Math.min(updatedTask.progress + 1, 100);
+
+  if (updatedTask.progress === 100) {
+    updatedTask.state = "SUCCESS";
+    updatedTask.status = "Concluído";
+  } else {
+    updatedTask.state = "PROGRESS";
+    updatedTask.status = "Processando";
+  }
+
+  return JSON.stringify({
+    type: "ATUALIZACAO_TAREFA",
     payload: updatedTask,
   });
-
-  return message;
 };
 
-// Envia dados de tarefas em lotes a cada 5 segundos
 const sendInitialTasks = () => {
   const message = JSON.stringify({
     type: 'TAREFAS_ASSINCRONAS_LOTE',
@@ -55,27 +61,22 @@ const sendInitialTasks = () => {
   return message;
 };
 
-// Inicia a conexão WebSocket
-wss.on('connection', (ws) => {
-  console.log('Cliente conectado.');
+wss.on("connection", (ws) => {
+  console.log("Cliente conectado.");
 
-  // Envia as tarefas iniciais
   ws.send(sendInitialTasks());
 
-  // Envia atualizações a cada 3 segundos
   const intervalId = setInterval(() => {
-    ws.send(updateTaskProgress());
-  }, 3000);
+    const message = updateTaskProgress();
 
-  // Fecha a conexão após 30 segundos (simulando tempo de execução)
-  setTimeout(() => {
+    if (message) {
+      ws.send(message);
+    }
+  }, 1000);
+
+  ws.on("close", () => {
     clearInterval(intervalId);
-    ws.close();
-  }, 30000);
-
-  // Quando o cliente desconectar
-  ws.on('close', () => {
-    console.log('Cliente desconectado.');
+    console.log("Cliente desconectado.");
   });
 });
 
