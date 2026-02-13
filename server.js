@@ -5,23 +5,39 @@ const mockTasks = [
   {
     tarefaId: 1,
     state: "PENDING",
-    status: "Identificando registros",
+    status: "Identificando Registros",
     progress: 0,
     nome_arquivo: "Arquivo 1",
   },
   {
     tarefaId: 2,
     state: "PENDING",
-    status: "Identificando registros",
+    status: "Identificando Registros",
     progress: 0,
     nome_arquivo: "Arquivo 2",
   },
   {
     tarefaId: 3,
     state: "PENDING",
-    status: "Identificando registros",
+    status: "Identificando Registros",
     progress: 0,
     nome_arquivo: "Arquivo 3",
+  },
+  {
+    tarefaId: 4,
+    state: "PENDING",
+    status: "Identificando Registros",
+    progress: 0,
+    nome_arquivo: "Arquivo 4 (Vai dar erro)",
+    finalState: "FAILURE",
+  },
+  {
+    tarefaId: 5,
+    state: "PENDING",
+    status: "Identificando Registros",
+    progress: 0,
+    nome_arquivo: "Arquivo 5 (Parcial)",
+    finalState: "PARTIAL_SUCCESS",
   },
 ];
 
@@ -33,14 +49,26 @@ const updateTaskProgress = () => {
   const taskIndex = Math.floor(Math.random() * pendingTasks.length);
   const updatedTask = pendingTasks[taskIndex];
 
-  updatedTask.progress = Math.min(updatedTask.progress + 1, 100);
+  updatedTask.progress = Math.min(updatedTask.progress + 5, 100);
 
   if (updatedTask.progress === 100) {
-    updatedTask.state = "SUCCESS";
-    updatedTask.status = "Concluído";
+
+    if (updatedTask.finalState === "FAILURE") {
+      updatedTask.state = "FAILURE";
+      updatedTask.status = "Falha na Correção";
+
+    } else if (updatedTask.finalState === "PARTIAL_SUCCESS") {
+      updatedTask.state = "PARTIAL_SUCCESS";
+      updatedTask.status = "Concluído Parcialmente";
+
+    } else {
+      updatedTask.state = "SUCCESS";
+      updatedTask.status = "Concluído com Sucesso";
+    }
+
   } else {
     updatedTask.state = "PROGRESS";
-    updatedTask.status = "Processando";
+    updatedTask.status = "Corrigindo Registros";
   }
 
   return JSON.stringify({
